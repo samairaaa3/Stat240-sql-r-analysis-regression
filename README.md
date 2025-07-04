@@ -1,6 +1,6 @@
 # 📊 STAT 240 sql,r,analysis,regression
 
-This project is part of **STAT 240:**, focused on applying **R**, **SQL**, and **data visualization** to real-world retail data.
+This project is part of **STAT 240:**  at SIMON FRASER UNIVERSITY , focused on applying **R**, **SQL**, and **data visualization** to real-world retail data.
 
 ---
 
