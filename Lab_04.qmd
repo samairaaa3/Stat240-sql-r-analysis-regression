@@ -1,0 +1,126 @@
+---
+title: "Lab 04"
+subtitle: "Due Feb 14 5:00 PM PST"
+author: "Samaira(301592227)"
+format: html
+---
+
+Modify this template file to create your submission.
+
+# Problem 1a
+For this problem, I will write an R function `my_lm` that computes the slope \( a \) and y-intercept \( b \) of the line \( f(x) = ax + b \) using the method of least squares.
+
+```{r}
+# Define the function my_lm to compute the slope (a) and intercept (b) of a simple linear regression
+my_lm <- function(x, y) {
+  n <- length(x)
+  
+  # Calculate the slope (a)
+  a <- sum((x - mean(x)) * (y - mean(y))) / sum((x - mean(x))^2)
+  
+  # Calculate the intercept (b)
+  b <- mean(y) - a * mean(x)
+  
+  # Return the results as a named list
+  return(list(a = a, b = b))
+}
+```
+
+# Problem 1b
+Now, I will verify the function using the first three digits (301) and last three digits (227) of my student ID.
+
+```{r}
+# Define x and y based on student ID
+x <- c(3, 0, 1)
+y <- c(2, 2, 7)
+
+# Apply my_lm function
+my_lm_result <- my_lm(x, y)
+print(my_lm_result)
+
+# Compare with lm function
+lm_result <- lm(y ~ x)
+print(coef(lm_result))
+```
+
+# Problem 2: SQL Analysis
+
+## Part a: Total Sales for Item 71053
+
+```{r}
+library(RSQLite)
+library(DBI)
+
+# Connect to SQLite database
+con <- dbConnect(SQLite(), "xcoretail.sqlite")
+
+# Define months
+months <- c("2011-01", "2011-02", "2011-03", "2011-04",
+            "2011-05", "2011-06", "2011-07", "2011-08")
+
+# Initialize revenue storage
+revenue <- numeric(length(months))
+
+# Loop through each month to get revenue for StockCode 71053
+for (i in seq_along(months)) {
+  query <- sqlInterpolate(con, "
+    SELECT SUM(s.Quantity * p.UnitPrice) AS TotalRevenue 
+    FROM sales s 
+    JOIN prices p ON s.StockCode = p.StockCode 
+    WHERE s.StockCode = '71053' AND s.InvoiceDate LIKE ?month",
+    month = paste0(months[i], "%")
+  )
+  
+  # Execute query
+  request <- dbSendQuery(con, query)
+  result <- dbFetch(request)
+  dbClearResult(request)
+  
+  # Store result
+  revenue[i] <- ifelse(is.na(result$TotalRevenue), 0, result$TotalRevenue)
+}
+
+# Disconnect from database
+dbDisconnect(con)
+
+# Plot results
+plot(1:length(months), revenue, type="o", pch=19, col="blue",
+     main="Monthly Revenue for Stock 71053 (Jan 2011 - Aug 2011)",
+     xlab="Month", ylab="Revenue (USD)", xaxt='n')
+axis(1, at=1:length(months), labels=months)
+
+
+```
+
+## Part b: Total Revenue Across All Items
+
+```{r}
+# Connect to database
+con <- dbConnect(SQLite(), "xcoretail.sqlite")
+
+# Query total revenue per month across all items
+query_all <- "
+  SELECT strftime('%Y-%m', sales.InvoiceDate) AS month, 
+         SUM(sales.Quantity * prices.UnitPrice) AS revenue
+  FROM sales
+  JOIN prices ON sales.StockCode = prices.StockCode
+  WHERE strftime('%Y-%m', sales.InvoiceDate) BETWEEN '2011-01' AND '2011-08'
+  GROUP BY month
+  ORDER BY month;"
+
+# Execute query and fetch results
+result_all <- dbGetQuery(con, query_all)
+dbDisconnect(con)
+
+# Print results
+print(result_all)
+
+# Plot total revenue
+plot(1:nrow(result_all), result_all$revenue, type="o", pch=19, col="red",
+     main="Total Monthly Revenue (Jan 2011 - Aug 2011)",
+     xlab="Month", ylab="Total Revenue (USD)", xaxt='n')
+axis(1, at=1:nrow(result_all), labels=result_all$month)
+
+```
+
+This completes the lab submission.
